@@ -61,7 +61,7 @@ function Login() {
   // GitHub logo remains unchanged
   const GitHubLogo = () => (
     <Link
-      href="https://github.com/CobaltDataNet/cobaltdata.net"
+      href="https://github.com/CobaltDataNet"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -76,7 +76,7 @@ function Login() {
   // LinkedIn logo component
   const LinkedInLogo = () => (
     <Link
-      href="https://www.linkedin.com/company/cobaltdatanet"
+      href="https://www.linkedin.com/company/cobaltdata"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -96,7 +96,7 @@ const XLogo = () => (
   >
     <Image
       src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/x-social-media-round-icon.png"
-      alt="X (formerly Twitter) Logo"
+      alt="XLogo"
       boxSize="32px"
     />
   </Link>
@@ -117,7 +117,11 @@ const XLogo = () => (
         height="100vh" /* Full viewport height */
         gap={10} /* Adds spacing between form elements */
       >
-    
+        <Link
+      href="https://cobaltdata.net"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
 
       <Image
         src={Logo}
@@ -127,7 +131,7 @@ const XLogo = () => (
         alignSelf="center"
         mb={4}
       />
-
+  </Link>
       <FormControl id="username" isInvalid={!!errors.username || !!error}>
         <Input
           id="username"

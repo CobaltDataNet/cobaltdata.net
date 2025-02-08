@@ -37,7 +37,7 @@ const Sidebar = () => {
   // GitHubLogo displays only the GitHub logo as a clickable link
   const GitHubLogo = () => (
     <Link
-      href="https://github.com/CobaltDataNet/cobaltdata.net"
+      href="https://github.com/CobaltDataNet"
       target="_blank"
       rel="noopener noreferrer"
     >
