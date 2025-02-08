@@ -165,7 +165,6 @@ services:
       # Ensure unique router names for landing
       - "traefik.http.routers.landing-http.rule=Host(`cobaltdata.net`)"
       - "traefik.http.routers.landing-http.entrypoints=http"
-      - "traefik.http.services.landing-service.loadbalancer.server.port=80"
 
       - "traefik.http.routers.landing-www.rule=Host(`www.cobaltdata.net`)"
       - "traefik.http.routers.landing-www.entrypoints=http"
