@@ -1,0 +1,39 @@
+.elementor-178947 .elementor-element.elementor-element-3dd37df{--display:flex;--flex-direction:column;--container-widget-width:100%;--container-widget-height:initial;--container-widget-flex-grow:0;--container-widget-align-self:initial;--flex-wrap-mobile:wrap;--background-transition:0.3s;}.elementor-178947 .elementor-element.elementor-element-6f9fdd8{--display:flex;--flex-direction:row;--container-widget-width:initial;--container-widget-height:100%;--container-widget-flex-grow:1;--container-widget-align-self:stretch;--flex-wrap-mobile:wrap;--gap:16px 16px;--background-transition:0.3s;}.elementor-178947 .elementor-element.elementor-element-36e0687 img{width:60px;}.elementor-178947 .elementor-element.elementor-element-728e921 img{width:60px;}.elementor-178947 .elementor-element.elementor-element-728e921 > .elementor-widget-container{padding:0px 0px 0px 16px;border-style:solid;border-width:0px 0px 0px 1px;border-color:#D2DCE4;}.elementor-178947 .elementor-element.elementor-element-35fe38c img{width:60px;}.elementor-178947 .elementor-element.elementor-element-35fe38c > .elementor-widget-container{padding:0px 0px 0px 16px;border-style:solid;border-width:0px 0px 0px 1px;border-color:#D2DCE4;}/* Start custom CSS for html, class: .elementor-element-964d739 */.elementor-178947 .elementor-element.elementor-element-964d739 table {
+    font-size: 12px;
+}
+.elementor-178947 .elementor-element.elementor-element-964d739 table th, .elementor-178947 .elementor-element.elementor-element-964d739 .bpad {
+    border: solid 1px #000;
+    padding: 8px;
+}
+.elementor-178947 .elementor-element.elementor-element-964d739 .bcol {
+    border: solid 1px #000;
+    border-collapse: collapse;
+    text-align: center
+}
+ .elementor-178947 .elementor-element.elementor-element-964d739 table td:first-child { font-weight: 500; }
+.elementor-178947 .elementor-element.elementor-element-964d739 svg {
+    width: 11px;
+    height: 11px;
+}
+.elementor-178947 .elementor-element.elementor-element-964d739 table a {
+    color: #3d7ffc;
+    font-weight: 500;
+}
+.elementor-178947 .elementor-element.elementor-element-964d739 table small { display: block; }
+.elementor-178947 .elementor-element.elementor-element-964d739 .elementor-widget-container {
+    overflow: auto;
+    margin: 0 -27px;
+    padding: 0 27px;
+}
+@media (min-width: 768px) {
+    .elementor-178947 .elementor-element.elementor-element-964d739 table {
+        font-size: 14px;
+        table-layout: fixed;
+        width: 100%;
+    }
+    .elementor-178947 .elementor-element.elementor-element-964d739 table td:first-child { text-align: center; }
+    .elementor-178947 .elementor-element.elementor-element-964d739 table th:first-child, .elementor-178947 .elementor-element.elementor-element-964d739 table td:first-child {
+        width: 280px;
+        text-align: left;
+    }
+}/* End custom CSS */

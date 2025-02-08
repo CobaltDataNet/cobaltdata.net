@@ -1,0 +1,735 @@
+// LICENSE_CODE ZON
+'use strict'; /*jslint browser:true, es6:true*/
+/* global brd_cookies_consent_settings, brd_script_co */
+const brd_cookies = {};
+brd_cookies.get = (name, type)=>{
+    return window.brd && window.brd.essentials
+        && window.brd.essentials.get_cookie(name, type);
+};
+brd_cookies.remove = name=>{
+    return window.brd && window.brd.essentials
+        && window.brd.essentials.remove_cookie(name);
+};
+brd_cookies.set = (name, value, args, type)=>{
+    return window.brd && window.brd.essentials
+        && window.brd.essentials.set_cookie(name, value,
+            (args&&args.expires ? args.expires : 0)*24, type);
+};
+
+const brd_cookies_consent = {
+
+init(){
+    window.dataLayer = window.dataLayer || [];
+    brd_cookies_consent.trigger();
+    brd_cookies_consent.cookie_menu_item();
+    brd_cookies_consent.apply_settings();
+},
+
+is_test: !!brd_script_co.brd_is_test,
+root: document.querySelector(':root'),
+body: document.querySelector('body'),
+brd_cookies_consent_settings: typeof brd_cookies_consent_settings !==
+    'undefined' ? brd_cookies_consent_settings : {
+        necessary: [],
+        prefs: ['brd_cookie'],
+        mkt: [],
+    },
+brd_cookies_bar_txt: typeof brd_script_co.cookies_bar_txt !== 'undefined' ?
+    brd_script_co.cookies_bar_txt : {
+        title: 'We value your privacy',
+        description: 'We recommend you accept all cookies for the optimal '
+            +'experience when using our website.',
+        accept: 'Accept all',
+        mkt: 'Analytics only',
+        deny: 'Deny',
+        privacy: 'Privacy Policy',
+        privacy_url: '/privacy',
+        settings_lnk: 'Learn more and customize',
+        settings_btn: 'Cookies settings',
+    },
+brd_cookies_consent_txt: typeof brd_script_co.cookies_consent_txt !==
+    'undefined' ?
+    brd_script_co.cookies_consent_txt : {
+        title: 'Bright Data uses cookies to optimize your experience',
+        subtitle: 'We use cookies because they are necessary for our website '
+            +'to function. We use other cookies to enhance your experience by '
+            +'providing insights on how you use our website. We recommend '
+            +'accepting all cookies to receive the most value when using our '
+            +'website. You can learn more about each category of cookies by '
+            +'reading our '
+            +'<a href="/privacy" target="_blank">Privacy Policy</a>',
+        privacy: 'Privacy Policy',
+        privacy_url: '/privacy',
+        accept: 'Accept all',
+        accept_mkt: 'Analytics only',
+        deny: 'Necessary only',
+        necessary: 'Necessary cookies',
+        necessary_descr: 'Necessary cookies provide core functionality and '
+            +'are essential for the website to perform properly. They are '
+            +'enabled by default and cannot be disabled.',
+        pers: 'Personalization cookies',
+        pers_descr: 'Personalization cookies help us customize the content '
+            +'you receive on this website based on your usage.',
+        perf: 'Performance cookies',
+        perf_descr: 'These cookies allow us to monitor and improve website '
+            +'performance.',
+        mkt: 'Analytics only',
+        mkt_descr: 'Analytical cookies help us improve our website by '
+            +'collecting and reporting information on its usage.',
+        save: 'Save settings',
+    },
+name: 'brd_cookie_consent',
+
+is_eu(){
+    if (brd_cookies.get('brd_is_eu'))
+        return Promise.resolve(brd_cookies.get('brd_is_eu'));
+    return fetch('/wp-json/brd/info')
+        .then(res=>{
+            if (res.ok)
+                return res;
+            throw new Error();
+        })
+        .then(res=>res.json())
+        .then(is_eu=>this.is_eu_cb(is_eu))
+        .catch(()=>{ return true; });
+},
+is_eu_cb(is_eu){
+    const e = new Event('eu_cookie_set');
+    brd_cookies.set('brd_is_eu', is_eu, {expires: 1});
+    document.dispatchEvent(e);
+    return is_eu;
+},
+get_settings(){
+    return brd_cookies.get(this.name, 'object') ?
+        brd_cookies.get(this.name, 'object').settings : false;
+},
+
+is_cookies_allowed(){
+    if (!brd_cookies.get('brd_is_eu'))
+        return true;
+    if (!brd_cookies.get(this.name))
+        return false;
+    let res = false;
+    try { res = this.get_settings().mkt; } catch(e){}
+    return res;
+},
+
+show(popup_id){
+    popup_id = popup_id ? popup_id : 'brd_cookies_bar_popup';
+    if (!document.getElementById(popup_id))
+    {
+        switch (popup_id)
+        {
+        case 'brd_cookies_bar_popup':
+            this.bar_popup();
+            break;
+        case 'brd_cookies_settings_popup':
+            this.settings_popup();
+            break;
+        }
+    }
+    else if (popup_id=='brd_cookies_settings_popup')
+    {
+        const settings = this.get_settings();
+        const pers = document.getElementById('brd_cookies_settings_pers');
+        const perf = document.getElementById('brd_cookies_settings_perf');
+        const mkt = document.getElementById('brd_cookies_settings_mkt');
+        pers.checked = settings&&settings.preferences;
+        perf.checked = settings&&settings.preferences;
+        mkt.checked = settings&&settings.analytical;
+    }
+    this.root.classList.add(popup_id+'_shown');
+},
+
+close(popup_id){
+    const overlays = document.querySelectorAll('.cookies_popup_overlay');
+    const overlay = overlays.length!=0 ? overlays[overlays.length-1] : false;
+    if (!popup_id)
+    {
+        this.root.classList.remove('brd_cookies_bar_popup_shown',
+            'brd_cookies_settings_popup_shown');
+    }
+    else
+        this.root.classList.remove(popup_id+'_shown');
+    if (overlay)
+        overlay.remove();
+},
+
+bar_popup(){
+    const overlay = document.createElement('div');
+    const popup = document.createElement('div');
+    const popup_body = document.createElement('div');
+    const disclaimer = document.createElement('div');
+    const title_wrap = document.createElement('div');
+    const title = document.createElement('h5');
+    const img = document.createElement('img');
+    const description = document.createElement('span');
+    const links = document.createElement('div');
+    const lnk_privacy = document.createElement('a');
+    const lnk_settings = document.createElement('a');
+    const btns = document.createElement('div');
+    const btn_accept = document.createElement('a');
+    const btn_deny = document.createElement('a');
+    const btn_mkt = document.createElement('a');
+    const btn_settings = document.createElement('a');
+
+    overlay.classList.add('cookies_popup_overlay');
+
+    popup.setAttribute('id', 'brd_cookies_bar_popup');
+    popup.classList.add('cookies_bar_popup');
+    popup.setAttribute('role', 'dialog');
+
+    popup_body.classList.add('cookies_bar_popup_body');
+
+    disclaimer.classList.add('cookies_bar_popup_disclaimer');
+
+    title_wrap.classList.add('title_wrap');
+
+    title.innerHTML = this.brd_cookies_bar_txt.title;
+
+    description.classList.add('body');
+    description.innerHTML = this.brd_cookies_bar_txt.description;
+
+    links.classList.add('links_wrap');
+
+    lnk_privacy.setAttribute('href', this.brd_cookies_bar_txt.privacy_url);
+    lnk_privacy.innerHTML = this.brd_cookies_bar_txt.privacy;
+
+    btns.classList.add('cookies_bar_popup_btns');
+
+    btn_accept.setAttribute('id', 'brd_cookies_bar_accept');
+    btn_accept.setAttribute('role', 'button');
+    btn_accept.classList.add('cookies_btn', 'cookies_btn_clr_brand');
+    btn_accept.innerHTML = this.brd_cookies_bar_txt.accept;
+
+    btn_deny.setAttribute('id', 'brd_cookies_bar_deny');
+    btn_deny.setAttribute('role', 'button');
+    btn_deny.classList.add('cookies_btn', 'cookies_btn_clr_transparent');
+    btn_deny.innerHTML = this.brd_cookies_bar_txt.deny;
+
+    btn_settings.setAttribute('id', 'brd_cookies_bar_settings');
+    btn_settings.setAttribute('role', 'button');
+    btn_settings.classList.add('cookies_btn', 'cookies_btn_clr_transparent');
+    btn_settings.innerHTML = this.brd_cookies_bar_txt.settings_btn;
+
+    btn_mkt.setAttribute('id', 'brd_cookies_bar_settings');
+    btn_mkt.setAttribute('role', 'button');
+    btn_mkt.classList.add('cookies_btn', 'cookies_btn_clr_brand');
+    btn_mkt.innerHTML = this.brd_cookies_bar_txt.mkt;
+
+    lnk_settings.setAttribute('id', 'brd_cookies_bar_settings_lnk');
+    lnk_settings.setAttribute('role', 'button');
+    lnk_settings.innerHTML = this.brd_cookies_bar_txt.settings_lnk;
+
+    img.setAttribute('src', '/wp-content/plugins/brd_co'
+        +'/assets/img/value_privacy.svg');
+    img.classList.add('cookies_img');
+
+    document.body.appendChild(overlay);
+    overlay.appendChild(popup);
+    popup.appendChild(popup_body);
+    popup_body.appendChild(disclaimer);
+    disclaimer.appendChild(title_wrap);
+    title_wrap.appendChild(title);
+    title_wrap.appendChild(img);
+    disclaimer.appendChild(description);
+    popup_body.appendChild(links);
+    popup_body.appendChild(btns);
+    btns.appendChild(btn_accept);
+    btns.appendChild(btn_mkt);
+    btns.appendChild(btn_settings);
+
+    btn_accept.addEventListener('click', this.accept_all);
+    btn_mkt.addEventListener('click', this.accept_mkt);
+    btn_settings.addEventListener('click', this.show_settings_popup);
+    lnk_settings.addEventListener('click', this.show_settings_popup);
+    btn_deny.addEventListener('click',
+        this.close_cookies_consent_popup);
+    btn_deny.addEventListener('click', this.deny_all);
+},
+
+settings_popup(){
+    const settings = this.get_settings();
+    const overlay = document.createElement('div');
+    const popup = document.createElement('div');
+    const txt_wrap = document.createElement('div');
+    const title = document.createElement('h5');
+    const subtitle = document.createElement('p');
+    const privacy = document.createElement('a');
+    const btns_group = document.createElement('div');
+    const btn_deny = document.createElement('a');
+    const btn_mkt = document.createElement('a');
+    const btn_accept = document.createElement('a');
+    const settings_group = document.createElement('div');
+    const chkboxes = [
+        {
+            id: 'brd_cookies_settings_necessary',
+            title: this.brd_cookies_consent_txt.necessary,
+            descr: this.brd_cookies_consent_txt.necessary_descr,
+            is_checked: true,
+            is_disabled: true,
+        },
+        {
+            id: 'brd_cookies_settings_pers',
+            title: this.brd_cookies_consent_txt.pers,
+            descr: this.brd_cookies_consent_txt.pers_descr,
+            is_checked: settings ? settings.pers : false,
+        },
+        {
+            id: 'brd_cookies_settings_perf',
+            title: this.brd_cookies_consent_txt.perf,
+            descr: this.brd_cookies_consent_txt.perf_descr,
+            is_checked: settings ? settings.perf : false,
+        },
+        {
+            id: 'brd_cookies_settings_mkt',
+            title: this.brd_cookies_consent_txt.mkt,
+            descr: this.brd_cookies_consent_txt.mkt_descr,
+            is_checked: settings ? settings.mkt : false,
+        },
+    ];
+    const btn_save = document.createElement('a');
+
+    overlay.classList.add('cookies_popup_overlay');
+
+    popup.setAttribute('id', 'brd_cookies_settings_popup');
+    popup.classList.add('cookies_settings_popup_body');
+    popup.setAttribute('role', 'dialog');
+
+    title.classList.add('cookies_settings_popup_title');
+    title.innerHTML = this.brd_cookies_consent_txt.title;
+
+    subtitle.classList.add('cookies_settings_popup_subtitle');
+    subtitle.innerHTML = this.brd_cookies_consent_txt.subtitle;
+
+    privacy.setAttribute('href',
+        this.brd_cookies_consent_txt.privacy_url);
+    privacy.classList.add('brd_cookies_settings_privacy');
+    privacy.innerHTML = this.brd_cookies_consent_txt.privacy;
+
+    btns_group.classList.add('brd_cookies_settings_btns');
+
+    btn_deny.setAttribute('id', 'brd_cookies_settings_deny');
+    btn_deny.setAttribute('role', 'button');
+    btn_deny.classList.add('cookies_btn', 'cookies_btn_clr_grey');
+    btn_deny.innerHTML = this.brd_cookies_consent_txt.deny;
+
+    btn_accept.setAttribute('id', 'brd_cookies_settings_accept');
+    btn_accept.setAttribute('role', 'button');
+    btn_accept.classList.add('cookies_btn', 'cookies_btn_clr_brand');
+    btn_accept.innerHTML = this.brd_cookies_consent_txt.accept;
+
+    btn_mkt.setAttribute('id', 'brd_cookies_settings_accept_mkt');
+    btn_mkt.setAttribute('role', 'button');
+    btn_mkt.classList.add('cookies_btn', 'cookies_btn_clr_brand');
+    btn_mkt.innerHTML = this.brd_cookies_consent_txt.accept_mkt;
+
+    settings_group.classList.add('brd_cookies_settings_group');
+
+    for (let i=0; i<chkboxes.length; i++)
+    {
+        const el = document.createElement('div');
+        const toggle_wrap = document.createElement('div');
+        const toggle_ctrl = document.createElement('label');
+        const inp = document.createElement('input');
+        const ctrl = document.createElement('span');
+        const toggle = document.createElement('span');
+        const label = document.createElement('div');
+        const label_title = document.createElement('span');
+        const label_descr = document.createElement('span');
+
+        el.classList.add('brd_cookies_settings_el');
+
+        toggle_wrap.classList.add('brd_cookies_settings_chkbox_wrap');
+
+        toggle_ctrl.classList.add('toggle_control');
+        if (chkboxes[i].is_disabled)
+            toggle_ctrl.classList.add('disabled');
+
+        inp.setAttribute('id', chkboxes[i].id);
+        inp.setAttribute('type', 'checkbox');
+        if (chkboxes[i].is_checked)
+            inp.setAttribute('checked', '');
+        if (chkboxes[i].is_disabled)
+        {
+            inp.setAttribute('readonly', '');
+            inp.setAttribute('disabled', '');
+        }
+
+        ctrl.classList.add('control');
+
+        toggle.classList.add('toggle');
+
+        label_title.classList.add('brd_cookies_settings_el_title');
+        label_title.innerHTML = chkboxes[i].title;
+
+        label_descr.classList.add('brd_cookies_settings_el_descr');
+        label_descr.innerHTML = chkboxes[i].descr;
+
+        settings_group.appendChild(el);
+        el.appendChild(toggle_wrap);
+        toggle_wrap.appendChild(toggle_ctrl);
+        toggle_ctrl.appendChild(inp);
+        toggle_ctrl.appendChild(ctrl);
+        ctrl.appendChild(toggle);
+        el.appendChild(label);
+        label.appendChild(label_title);
+        label.appendChild(label_descr);
+    }
+
+    btn_save.setAttribute('id', 'brd_cookies_settings_save');
+    btn_save.setAttribute('role', 'button');
+    btn_save.classList.add('cookies_btn', 'cookies_btn_clr_grey');
+    btn_save.innerHTML = this.brd_cookies_consent_txt.save;
+
+    document.body.appendChild(overlay);
+    overlay.appendChild(popup);
+    popup.appendChild(title);
+    popup.appendChild(txt_wrap);
+    txt_wrap.appendChild(subtitle);
+    popup.appendChild(settings_group);
+    btns_group.appendChild(btn_accept);
+    btns_group.appendChild(btn_mkt);
+    btns_group.appendChild(btn_save);
+    popup.appendChild(btns_group);
+
+    btn_accept.addEventListener('click', this.accept_all);
+    btn_mkt.addEventListener('click', this.accept_mkt);
+    btn_deny.addEventListener('click', this.deny_all);
+    btn_save.addEventListener('click', this.save);
+},
+
+show_settings_popup(e){
+    e.preventDefault();
+    e.stopPropagation();
+    brd_cookies_consent.show('brd_cookies_settings_popup');
+},
+
+trigger(){
+    this.is_eu()
+    .then(is_eu=>{
+        if (!is_eu || is_eu == 'false')
+        {
+            this.load_tag('mkt');
+            return false;
+        }
+        document.body.classList.add('brd_is_eu');
+        // trigger popup
+        if (!brd_cookies.get(this.name))
+            this.show();
+    })
+    .catch();
+},
+
+accept_all(){
+    const data = {
+        name: 'accept_all',
+        saved_at: Date.now(),
+        settings: {necessary: true, pers: true, perf: true, mkt: true},
+    };
+    brd_cookies.remove(brd_cookies_consent.name);
+    brd_cookies.set(brd_cookies_consent.name, data, {expires: 30}, 'object');
+    brd_cookies_consent.close();
+    brd_cookies_consent.apply_settings();
+},
+
+accept_mkt(){
+    const data = {
+        name: 'accept_mkt',
+        saved_at: Date.now(),
+        settings: {necessary: true, pers: false, perf: false, mkt: true},
+    };
+    brd_cookies.remove(brd_cookies_consent.name);
+    brd_cookies.set(brd_cookies_consent.name, data, {expires: 30}, 'object');
+    brd_cookies_consent.close();
+    brd_cookies_consent.apply_settings();
+},
+
+deny_all(){
+    const data = {
+        name: 'deny_all',
+        saved_at: Date.now(),
+        settings: {necessary: true, pers: false, perf: false, mkt: false},
+    };
+    brd_cookies.remove(brd_cookies_consent.name);
+    brd_cookies.set(brd_cookies_consent.name, data, {expires: 30}, 'object');
+    brd_cookies_consent.close();
+    brd_cookies_consent.close('brd_cookies_settings_popup');
+    brd_cookies_consent.trigger();
+    brd_cookies_consent.apply_settings();
+},
+
+close_cookies_consent_popup(){
+    brd_cookies_consent.close();
+},
+
+save(){
+    const data = {
+        name: 'save',
+        saved_at: Date.now(),
+        settings: {
+            necessary: document.getElementById(
+                'brd_cookies_settings_necessary').checked,
+            pers: document.getElementById(
+                'brd_cookies_settings_pers').checked,
+            perf: document.getElementById(
+                'brd_cookies_settings_perf').checked,
+            mkt: document.getElementById(
+                'brd_cookies_settings_mkt').checked,
+        },
+    };
+    let data_dl = '';
+    brd_cookies.remove(brd_cookies_consent.name);
+    brd_cookies.set(brd_cookies_consent.name, data, {expires: 30}, 'object');
+    brd_cookies_consent.close();
+    const opts = Object.keys(data.settings);
+    for (let i=0; i<opts.length; i++)
+    {
+        const opt = opts[i];
+        if (!data.settings[opt])
+            continue;
+        const readable = {necessary: 'necessary', pers: 'personalization',
+            perf: 'performance', mkt: 'analytical'};
+        if (data_dl!=='')
+            data_dl = `${data_dl}+`;
+        data_dl = `${data_dl}${readable[opt]}`;
+    }
+    window.dataLayer.push({
+        event: 'brd-cookie',
+        data: data_dl,
+    });
+    brd_cookies_consent.apply_settings();
+},
+
+close_all(){
+    this.root.classList.remove('brd_cookies_bar_popup_shown',
+        'brd_cookies_settings_popup_shown');
+},
+
+exit(){
+    window.onkeydown = e=>{
+        if (e.key=='Escape'||e.keyCode==27)
+            this.close_all();
+    };
+},
+
+cookie_menu_item(){
+    let btn = document.querySelector('.btn_open_cookies_settings');
+    if (!btn)
+        return;
+    let a = btn.querySelector('a');
+    if (!a)
+        return;
+    a.addEventListener('click', this.show_settings_popup);
+    a.setAttribute('role', 'button');
+},
+
+cookies: {
+    necessary: {
+        'brd_is_eu': {domains: [window.location.hostname]},
+        'brd_cookie_consent': {domains: [window.location.hostname]},
+        'XSRF-TOKEN': {domains: [window.location.hostname]},
+        // used for ajax queries
+        'wp-wpml_current_language': {domains: [window.location.hostname]},
+        'wordpress_test_cookie': {domains: [window.location.hostname]},
+        'signup_redirect_url': {domains: [window.location.hostname]},
+    },
+    pers: {
+        'user': {domains: [window.location.hostname]},
+        'brd_user': {domains: [window.location.hostname]},
+        'two_step_verification': {domains: [window.location.hostname]},
+        '_gcl_au': {domains: [`.${window.location.hostname}`]},
+        '__zlcmid': {domains: [`.${window.location.hostname}`]},
+        'ipqsd': {domains: [`.${window.location.hostname}`]},
+        'connect.sid': {domains: [window.location.hostname]},
+        '_gd_session': {domains: [window.location.hostname]},
+        '_gd_visitor': {domains: [window.location.hostname]},
+        'auth': {domains: [window.location.hostname]},
+        'conversation_id': {domains: [window.location.hostname]},
+        'ext_user_id': {domains: [window.location.hostname]},
+        'statsig_signup_id': {domains: [window.location.hostname]},
+    },
+    perf: {
+        'dark_mode': {domains: [window.location.hostname]},
+        'popup_': {domains: [window.location.hostname]},
+        'brd_notice_closed': {domains: [window.location.hostname]},
+    },
+    mkt: {
+        'lang': {domains: ['.ads.linkedin.com'], tag: 'gtm'},
+        'MUID': {domains: ['.clarity.ms', '.bing.com'], tag: 'gtm'},
+        '_fbp': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '__hssc': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '__hstc': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '__hssrc': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_clck': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        'ln_or': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_uetvid': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_uetsid': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_gid': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_ga': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_cq_suid': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        'hubspotutk': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_clsk': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_cq_duid': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        'ftr_blst_1h': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_cq_pxg': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_vwo_sn': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_rdt_uuid': {domains: [`.${window.location.hostname}`], tag: 'gtm'},
+        '_vwo_uuid_v2': {domains: [`.${window.location.hostname}`],
+            tag: 'gtm'},
+        'SRM_B': {domains: ['.c.bing.com'], tag: 'gtm'},
+        'SM': {domains: ['.c.clarity.ms'], tag: 'gtm'},
+        'test_cookie': {domains: ['.doubleclick.net'], tag: 'gtm'},
+        '__cf_bm': {domains: ['.hubspot.com'], tag: 'gtm'},
+        'R': {domains: ['.influ2.com'], tag: 'gtm'},
+        'bcookie': {domains: ['.linkedin.com'], tag: 'gtm'},
+        'AnalyticsSyncHistory': {domains: ['.linkedin.com'], tag: 'gtm'},
+        'li_sugr': {domains: ['.linkedin.com'], tag: 'gtm'},
+        'UserMatchHistory': {domains: ['.linkedin.com'], tag: 'gtm'},
+        'lidc': {domains: ['.linkedin.com'], tag: 'gtm'},
+        'bscookie': {domains: ['.www.linkedin.com'], tag: 'gtm'},
+        'cg_uuid': {domains: ['automn.thesmilingelbows.com'], tag: 'gtm'},
+        'CLID': {domains: ['www.clarity.ms'], tag: 'gtm'},
+        'brd_hs_last_submitted': {domains: [window.location.hostname]},
+        'U': {domains: '.adsymptotic.com', tag: 'gtm'},
+        'referrer_id': {domains: '.adsymptotic.com', tag: 'gtm'},
+        '_gat_UA-60520689-1': {domains: [`.${window.location.hostname}`],
+            tag: 'gtm'}, // XXX: pattern?
+        'mp_f6ddaef254cfb0b8455d909449a24693_mixpanel': {
+            domains: [`.${window.location.hostname}`],
+            tag: 'gtm'}, // XXX: pattern?
+        'fingerprint_1667236593854': {
+            domains: [`.${window.location.hostname}`],
+            tag: 'gtm'}, // XXX: pattern?
+        '_ga_KQX3XWKR2T': {domains: [`.${window.location.hostname}`],
+            tag: 'gtm'}, // XXX: pattern?
+    },
+},
+
+cookies_by_pattern: ['popup_'],
+
+is_cookie_allowed(cookie){
+    const settings = this.get_settings();
+    if (!settings)
+        return false;
+    const types = Object.keys(this.cookies);
+    for (let i=0; i<types.length; i++)
+    {
+        const type = types[i];
+        if (cookie===type)
+            return settings[type];
+    }
+    return false;
+},
+
+get_cookie_type_by_name(name){
+    for (let i=0; i<this.cookies_by_pattern.length; i++)
+    {
+        if (!name.includes(this.cookies_by_pattern[i]))
+            continue;
+        name = this.cookies_by_pattern[i];
+        break;
+    }
+    if (name in this.cookies.necessary)
+        return 'necessary';
+    if (name in this.cookies.pers)
+        return 'pers';
+    if (name in this.cookies.perf)
+        return 'perf';
+    return 'mkt';
+},
+
+apply_settings(){
+    const settings = this.get_settings();
+    if (!settings)
+        return false;
+    const types = Object.keys(this.cookies);
+    for (let i=0; i<types.length; i++)
+    {
+        const type = types[i];
+        if (type && this.is_cookie_allowed(type))
+            this.load_tag(type);
+    }
+},
+
+load_tag(type){
+    const is_cn = !!brd_script_co.is_cn;
+    const is_uw = brd_script_co.cookies_consent_txt.is_uw;
+    init_uw();
+    function init_uw(){
+        if (is_cn || !is_uw)
+            return;
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.setAttribute('id', 'brd_uw');
+        script.innerText = `(function(d){`
+            +`var s = d.createElement('script');`
+            +`s.setAttribute('data-account', '5QpdnMuu2L');`
+            +`s.setAttribute('src', 'https://cdn.userway.org/widget.js');`
+            +`(d.body||d.head).appendChild(s);`
+            +`})(document);`;
+        document.head.appendChild(script);
+    }
+    if (type!='mkt')
+        return;
+    if (typeof window.gtm_should_init === 'undefined')
+    {
+        window.gtm_should_init = navigator.userAgent.indexOf('zselenium') == -1
+            && navigator.userAgent.indexOf('WP Rocket')== -1
+            && navigator.userAgent.indexOf('UNCSS')== -1;
+    }
+    document.addEventListener('scroll', init_gtm_on_event);
+    document.addEventListener('mousemove', init_gtm_on_event);
+    document.addEventListener('touchstart', init_gtm_on_event);
+    document.addEventListener('eu_cookie_set', init_gtm_on_event);
+    setTimeout(()=>{
+        const e = new Event('gtm_timeout');
+        document.addEventListener('gtm_timeout', init_gtm_on_event);
+        document.dispatchEvent(e);
+    }, 3500);
+    function init_gtm_on_event(event){
+        init_gtm();
+        event.currentTarget.removeEventListener(event.type, init_gtm_on_event);
+    }
+    function init_gtm(){
+        if (!window.gtm_should_init)
+            return false;
+        const is_eu_cookie = brd_cookies.get('brd_is_eu');
+        // do not load until is_eu cookie exists
+        if (typeof is_eu_cookie == 'undefined')
+            return false;
+        if (brd_cookies_consent.is_cookie_allowed(type)===false &&
+            is_eu_cookie==true)
+        {
+            return false;
+        }
+        window.gtm_should_init = false;
+        function gtag(){
+            window.dataLayer.push(arguments);
+        }
+        gtag('consent', 'default', {
+            'ad_storage': 'granted',
+            'ad_user_data': 'granted',
+            'ad_personalization': 'granted',
+            'analytics_storage': 'granted'
+        });
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = ()=>{
+            window.dataLayer.push({
+                event: 'gtm.js',
+                'gtm.start': new Date().getTime(),
+                'gtm.uniqueEventId': 0
+            });
+        };
+        script.src = 'https://www.googletagmanager.com/gtm.js?id='
+            +brd_script_co.gtmid;
+        document.head.appendChild(script);
+    }
+},
+
+};
+window.onload = brd_cookies_consent.init;
+window.brd_cookies_consent = brd_cookies_consent;

@@ -1,0 +1,1 @@
+.scroller_nav .nav_item{cursor:pointer;position:relative;transition:text-shadow .2s}.scroller_nav .nav_item.active{color:#00e0ff;text-shadow:1px 0 0 #00e0ff}.scroller_nav .nav_item.active:after{border-bottom:2px solid #00e0ff;bottom:-16px;content:"";display:block;position:absolute;width:100%}.scroller_nav.sticky{background:#092349;position:sticky;top:70px;z-index:2}

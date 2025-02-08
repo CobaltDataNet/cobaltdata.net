@@ -90,12 +90,12 @@ function Login() {
 // X (formerly Twitter) logo component
 const XLogo = () => (
   <Link
-    href="https://twitter.com/cobaltdatanet"
+    href="https://twitter.com/cobaltdata"
     target="_blank"
     rel="noopener noreferrer"
   >
     <Image
-      src=""
+      src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/x-social-media-round-icon.png"
       alt="X (formerly Twitter) Logo"
       boxSize="32px"
     />

@@ -1,0 +1,1 @@
+.steps_arrow{height:9px;width:172px}.steps_list{counter-reset:steps_counter;list-style:none}.steps_list_item{counter-increment:steps_counter}.steps_list_item_count{border-radius:50%;height:64px;position:relative;width:64px}.steps_list_item_count:before{content:counter(steps_counter)}.steps_list_item:last-child .steps_arrow{display:none}
