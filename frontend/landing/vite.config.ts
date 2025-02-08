@@ -5,5 +5,3 @@ export default defineConfig({
   publicDir: "public",
   plugins: [react()],
 });
-
-})
