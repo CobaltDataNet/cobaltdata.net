@@ -3,11 +3,11 @@ FROM node:20 AS build-stage
 
 WORKDIR /app
 
-# Copy only package.json first for better caching
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm install
+# Copy only package.json first for caching
+COPY frontend/package.json frontend/package-lock.json ./frontend/
+RUN npm install --prefix ./frontend
 
-# Copy the frontend files
+# Copy the entire frontend directory
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
 RUN npm run build
