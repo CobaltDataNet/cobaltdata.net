@@ -1,11 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "noEmit": true,  // ✅ REQUIRED to fix the error
-    "allowImportingTsExtensions": true
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "playwright.config.ts"],
-  "exclude": ["tests/**/*.ts"]
+  "exclude": ["dist", "node_modules"]
 }
-
