@@ -6,15 +6,17 @@ WORKDIR /app
 
 COPY package*.json /app/
 
-RUN npm install
-
 COPY ./ /app/
 
 ARG VITE_API_URL=${VITE_API_URL}
 COPY . . 
- # Ensure all files, including index.html, are copied
 
+COPY landing/package.json landing/package-lock.json ./
+RUN npm install
+
+COPY landing .  # Copy everything inside landing/
 RUN npm run build
+
 
 
 # Use Nginx for serving the files
