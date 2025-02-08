@@ -1,13 +1,13 @@
-# Stage 0: Build Frontend
+# Stage 0: Build Frontend (React + TypeScript)
 FROM node:20 AS build-stage
 
 WORKDIR /app
 
-# Copy frontend package.json first for caching
+# Copy frontend dependencies first
 COPY frontend/package.json frontend/package-lock.json ./frontend/
 RUN npm install --prefix ./frontend
 
-# Copy frontend source files
+# Copy frontend files
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
 RUN npm run build
@@ -15,11 +15,11 @@ RUN npm run build
 # Stage 1: Build Landing Page Separately
 WORKDIR /app/frontend/landing
 
-# Copy landing package.json first
+# Copy landing dependencies
 COPY frontend/landing/package.json frontend/landing/package-lock.json ./
 RUN npm install
 
-# Copy landing page source files
+# Copy landing page files
 COPY frontend/landing ./  
 RUN npm run build
 
@@ -29,7 +29,7 @@ FROM nginx:1.27.4
 # Copy built frontend to Nginx web directory
 COPY --from=build-stage /app/frontend/dist/ /usr/share/nginx/html/
 
-# Copy built landing page to a separate subfolder
+# Copy built landing page to `/landing`
 COPY --from=build-stage /app/frontend/landing/dist/ /usr/share/nginx/html/landing/
 
 # Copy Nginx config
