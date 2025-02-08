@@ -11,6 +11,7 @@ RUN npm install
 COPY ./ /app/
 
 ARG VITE_API_URL=${VITE_API_URL}
+COPY . .  # Ensure all files, including index.html, are copied
 
 RUN npm run build
 
