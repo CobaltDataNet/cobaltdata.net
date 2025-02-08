@@ -2,11 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  root: "landing", // Set the root directory to the landing folder
-  publicDir: "landing/public", // Ensure Vite finds index.html inside public
+  root: "landing", // Set the correct root directory
+  publicDir: "public", // Ensure index.html is served correctly
   plugins: [react()],
   build: {
-    outDir: "dist", // Output the final build to dist/
+    outDir: "../dist", // Build output outside landing/
     emptyOutDir: true,
   }
 });
