@@ -1,32 +1,40 @@
-# Use Node to build the frontend
-# Stage 0, "build-stage", based on Node.js, to build and compile the frontend
+# Stage 0: Build Frontend (React + TypeScript)
 FROM node:20 AS build-stage
 
 WORKDIR /app
 
-COPY package*.json /app/
-
-COPY ./ /app/
-
-ARG VITE_API_URL=${VITE_API_URL}
-COPY . . 
-
-COPY landing/package.json landing/package-lock.json ./
+# Copy package files first for better caching
+COPY package.json package-lock.json ./
 RUN npm install
 
-COPY landing .  # Copy everything inside landing/
+# Copy the rest of the frontend files
+COPY . .
+
+# Build main frontend app
 RUN npm run build
 
+# Stage 1: Build Landing Page (Separate Build)
+WORKDIR /app/frontend/landing
 
+COPY frontend/landing/package.json frontend/landing/package-lock.json ./
+RUN npm install
 
-# Use Nginx for serving the files
+# Copy the landing files and build separately
+COPY frontend/landing .  
+RUN npm run build
+
+# Stage 2: Serve with Nginx
 FROM nginx:1.27.4
 
-# Stage 1, based on Nginx, to have only the compiled app, ready for production with Nginx
-
+# Copy built frontend to Nginx web directory
 COPY --from=build-stage /app/dist/ /usr/share/nginx/html
 
+# Copy built landing page to a separate subfolder
+COPY --from=build-stage /app/frontend/landing/dist/ /usr/share/nginx/html/landing
+
+# Copy Nginx config
 COPY ./nginx.config /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
